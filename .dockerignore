@@ -1,0 +1,9 @@
+# Exclude all from docker build context, instead explicitly add stuff that's needed
+# Helps keep build context small
+*
+!hnet
+!tests
+!.pylintrc
+!README.md
+!setup.py
+!requirements*

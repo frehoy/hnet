@@ -1,0 +1,14 @@
+# Start from the core image built in the main Dockerfile
+FROM hnet:latest
+
+# Add development-specific requirements
+WORKDIR /hnet
+ADD .pylintrc /hnet/
+ADD requirements_dev.txt /hnet/
+RUN pip install -r requirements_dev.txt
+
+# Add the tests
+ADD tests/ /hnet/tests
+
+# Override the parent images flask entrypoint so we can run black/mypy etc
+ENTRYPOINT []
