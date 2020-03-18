@@ -5,3 +5,4 @@
 .mypy_cache/
 *.egg-info/
 __pycache__/
+programs.json

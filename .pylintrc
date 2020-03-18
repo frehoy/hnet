@@ -3,4 +3,5 @@ disable=bad-continuation, # Conflicts with black
         logging-format-interpolation # f-strings are better than %
 
 good-names=f, # It's even in the standard docs for opening files
-           app # Is flask convention
+           app, # Is flask convention
+           log

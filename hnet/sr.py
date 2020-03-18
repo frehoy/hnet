@@ -1,15 +1,25 @@
-""" Sveriges Radio API interface
+""" Typed implementation of Sveriges Radio API interface
 
-Docs here: https://sverigesradio.se/api/documentation/v2/index.html
+The idea is to provide an interface through classes so we aren't
+passing dicts around blindly, hoping they have the right fields.
 """
 
-import os
-import json
+import logging
+from typing import Optional, List, Dict, Any
 
-from typing import List, Dict, Any
 import requests
 
+import hnet
+
+logging.basicConfig(format=hnet.LOGFORMAT, level=logging.DEBUG)
+log = logging.getLogger(__name__)
+
 URL_BASE = "https://api.sr.se/api/v2"
+
+
+def get_n_pages(n_items, pagesize=10):
+    """ How many api-pages are needed to get n_items ? """
+    return (n_items // pagesize) + 1
 
 
 class SrApiIter:
@@ -41,6 +51,7 @@ class SrApiIter:
             raise StopIteration
 
         self.params["page"] = self.page
+        # Something goes bad with utf-8 encoding here, .text is fine, .json not
         response = requests.get(url=self.url, params=self.params).json()
         data = response[self.data_key]
 
@@ -52,67 +63,97 @@ class SrApiIter:
         return data
 
 
-def get_all_programs_from_api() -> List[Any]:
-    """ Get news and other programs """
+class Episode:
+    """ Episode class """
 
-    # Get regular programs
-    programs: List[Any] = [
-        program
+    def __init__(self, raw: Dict[str, Any]) -> None:
+        self.id: int = int(raw["id"])  # pylint: disable=invalid-name
+        self.title: str = raw["title"]
+        self.description: str = raw["description"]
+        self.program: Program = Program(
+            program_id=raw["program"]["id"], name=raw["program"]["name"]
+        )
+
+        if "downloadpodfile" in raw.keys():
+            self.url_audio = raw["downloadpodfile"]["url"]
+        elif "broadcast" in raw.keys():
+            # Get the first broadcastfile, might be incorrect
+            self.url_audio = raw["broadcast"]["broadcastfiles"][0]["url"]
+        else:
+            raise RuntimeError(f"Couldn't find an URL to audio file")
+
+    def __str__(self):
+        return f"Episode: id: {self.id} for program {self.program}"
+
+
+class Program:
+    """ An SR program """
+
+    def __init__(self, program_id: int, name: str) -> None:
+        self.id = program_id  # pylint: disable=invalid-name
+        self.name = name
+        self.episodes: List[Episode] = []
+        self.latest_episode: Optional[Episode] = None
+        self.n_episodes = 2
+
+    def __str__(self):
+        return f"Program: name: {self.name} id: {self.id}"
+
+    def refresh_episodes(self) -> None:
+        """ Refresh the episodes for this program """
+
+        iter_pages = SrApiIter(
+            endpoint="/episodes/index",
+            data_key="episodes",
+            params={"programid": self.id},
+            max_pages=get_n_pages(n_items=self.n_episodes),
+        )
+
+        self.episodes = [
+            Episode(raw_episode) for page in iter_pages for raw_episode in page
+        ]
+
+
+def get_all_programs_from_api() -> List[Program]:
+    """ Get news and other programs """
+    log.debug(f"Getting all programs from API")
+    # Get regular programs from paginated API
+    programs: List[Program] = [
+        Program(program_id=program["id"], name=program["name"])
         for page in SrApiIter(endpoint="/programs/index", data_key="programs")
         for program in page
     ]
-    # News programs are listed in their own endpoint w/o pagination
-    news: List[Any] = requests.get(
-        url=f"{URL_BASE}/news", params={"format": "json"}
-    ).json()["programs"]
+    # Get news programs, they come in a single page
+    news: List[Program] = [
+        Program(program_id=raw_program["id"], name=raw_program["name"])
+        for raw_program in requests.get(
+            url=f"{URL_BASE}/news", params={"format": "json"}
+        ).json()["programs"]
+    ]
 
     return news + programs
 
 
-def load_programs() -> Dict[str, Any]:
-    """ If we have cached programs, return them. Otherwise fetch them """
-
-    # Load cached programs if we have them
-    if os.path.isfile("programs.json"):
-        print(f"Loading programs from json")
-        with open("programs.json", "r") as f:
-            programs = json.load(f)
-    # Fetch if we don't
-    else:
-        print(f"Didn't find any local programs, refetching")
-        programs = get_all_programs_from_api()
-        with open("programs.json", "w") as f:
-            json.dump(programs, f, indent=4)
-    return programs
-
-
-def get_n_pages(n_items, pagesize=10):
-    """ How many api-pages are needed to get n_items ? """
-    return (n_items // pagesize) + 1
-
-
-def get_episodes(program_id, n_episodes=1):
-    """ Get episodes for a program """
-    iter_pages = SrApiIter(
-        endpoint="/episodes/index",
-        data_key="episodes",
-        params={"programid": program_id},
-        max_pages=get_n_pages(n_items=n_episodes),
-    )
-    episodes = [episode for page in iter_pages for episode in page]
-    return episodes[0:n_episodes]
-
-
-def query_programs(programs, name) -> List[Any]:
-    """ Get programs matching a name """
-    return [
-        program
-        for program in programs
-        if name.lower() in program["name"].lower()
+def query_programs(name, programs: List[Program]) -> List[Program]:
+    """ Simple "name in" query """
+    matches = [
+        program for program in programs if name.lower() in program.name.lower()
     ]
+    log.info(f"Found {len(matches)} matches for programs named like {name}")
+    return matches
 
 
-def get_programs_with_episodes(name: str) -> None:
-    """ Get list of dicts of programs with latest episodes attached"""
-    for program in query_programs(programs=load_programs(), name=name):
-        _ = get_episodes(program_id=program["id"])
+def main():
+    """ Dev stuff """
+
+    term = "ekot"
+    all_programs = get_all_programs_from_api()
+    matching_programs = query_programs(name=term, programs=all_programs)
+    for program in matching_programs:
+        program.refresh_episodes()
+        for episode in program.episodes:
+            print(episode)
+
+
+if __name__ == "__main__":
+    main()
