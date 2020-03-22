@@ -1,6 +1,5 @@
 #!/usr/bin/env sh
 
-
 # Run the CI suite on docker
 
 clear

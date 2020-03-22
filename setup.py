@@ -8,10 +8,10 @@ setuptools.setup(
     version="0.0.1",
     author="Frederick Hoyles",
     author_email="top@secret.com",
-    description="An app wow",
+    description="A silly SR API app",
     long_description = long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/frehoy/ogdata",
+    url="https://github.com/frehoy/hnet",
     packages=setuptools.find_packages(),
         classifiers=[
         "Programming Language :: Python :: 3",

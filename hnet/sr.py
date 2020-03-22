@@ -1,4 +1,8 @@
-""" Typed implementation of Sveriges Radio API interface """
+""" Typed implementation of Sveriges Radio API interface
+
+Original API reference at:
+https://sverigesradio.se/api/documentation/v2/index.html
+"""
 
 from typing import Optional, List, Dict, Any
 import logging

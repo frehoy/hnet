@@ -11,7 +11,6 @@ app = flask.Flask(__name__)
 
 PROGRAMS = sr.get_all_programs_from_api()
 
-
 @app.route("/")
 def main():
     """ Main endpoint """
