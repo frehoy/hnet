@@ -1,6 +1,4 @@
 """ The main hnet package """
-__all__ = ["app", "utils", "LOGFORMAT"]
+__all__ = ["app", "utils", "sr"]
 
-from . import app, utils
-
-LOGFORMAT = "[%(asctime)s] - %(name)s:%(lineno)d - %(levelname)s - %(message)s"
+from . import app, utils, sr

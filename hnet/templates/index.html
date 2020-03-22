@@ -1,0 +1,32 @@
+<html>
+    <head>
+        <title>SR</title>
+    </head>
+    <body>
+        <!-- The search box -->
+        <p> Search SR programs by name </p>
+        <form method="GET">
+            <input name="query">
+            <input type="submit">
+        </form>
+
+        <!-- Present results -->
+        {% if programs %}
+            <p> Latest episodes for programs matching {{ query }} :</p>
+        {% elif query and not programs %}
+            <p> No results for {{query}} </p>
+        {% endif %}
+
+        {% for program in programs %}
+            <div>
+                <p>
+                    {{ program.name }}:
+                    <a href={{ program.latest_episode.url_audio }}>
+                        {{ program.latest_episode.url_audio }}
+                    </a>
+                </p>
+            </div>
+        {% endfor %}
+
+    </body>
+</html>
