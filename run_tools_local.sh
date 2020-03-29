@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 set -e # Fail on error
 clear
 echo "Setting env"

@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Run the "prod" docker image to make sure gunicorn works and the app looks sane
 set -e # Stop on error
 # Build the main dockerfile

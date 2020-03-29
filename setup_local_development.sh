@@ -1,4 +1,5 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
+
 # Setup a local development environment with:
 # * An up-to-date pip
 # * A virtual env with our deps and development-specific deps installed
