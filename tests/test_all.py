@@ -35,6 +35,17 @@ def test_program() -> None:
     assert program.name == "fake program"
 
 
+def test_dedup_programs() -> None:
+    """ Test that dedup programs works """
+
+    prog_1 = sr.Program({"id": 1, "name": "fake program"})
+    prog_1_dup = sr.Program({"id": 1, "name": "fake program"})
+    prog_2 = sr.Program({"id": 2, "name": "fake program"})
+    progs_w_duplicates = [prog_1, prog_1_dup, prog_2]
+    progs_deduped = sr.dedupe_programs(progs_w_duplicates)
+    assert len(progs_deduped) == 2
+
+
 def test_get_n_pages():
     """ Test that the page math is correct """
 

@@ -131,7 +131,21 @@ def get_all_programs_from_api() -> List[Program]:
         ).json()["programs"]
     ]
 
-    return news + programs
+    all_programs = dedupe_programs(news + programs)
+
+    return all_programs
+
+
+def dedupe_programs(programs: List[Program]) -> List[Program]:
+    """ Deduplicate a list of programs """
+
+    programs_unique: List[Program] = list()
+    for program in programs:
+        if not any(
+            [prog for prog in programs_unique if prog.id == program.id]
+        ):
+            programs_unique.append(program)
+    return programs_unique
 
 
 def query_programs(name, programs: List[Program]) -> List[Program]:
