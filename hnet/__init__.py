@@ -1,4 +1,4 @@
 """ The main hnet package """
-__all__ = ["app", "utils", "sr"]
+__all__ = ["app", "sr"]
 
-from . import app, utils, sr
+from . import app, sr
