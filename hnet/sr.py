@@ -7,7 +7,6 @@ https://sverigesradio.se/api/documentation/v2/index.html
 from typing import Optional, List, Dict, Any
 import logging
 import warnings
-
 import requests
 
 log = logging.getLogger(__name__)
@@ -15,12 +14,7 @@ log = logging.getLogger(__name__)
 URL_BASE = "https://api.sr.se/api/v2"
 
 
-def get_n_pages(n_items, pagesize=10):
-    """ How many api-pages are needed to get n_items ? """
-    return ((n_items - 1) // pagesize) + 1
-
-
-class SrApiIter:
+class _SrApiIter:
     """ Iterator for paginated SR API """
 
     def __init__(self, endpoint, data_key, max_pages=None, params=None):
@@ -101,11 +95,11 @@ class Program:
     def refresh_episodes(self, n_episodes: int = 1) -> None:
         """ Refresh the episodes for this program """
         log.info(f"Getting {n_episodes} episodes for {self.name}")
-        iter_pages = SrApiIter(
+        iter_pages = _SrApiIter(
             endpoint="/episodes/index",
             data_key="episodes",
             params={"programid": self.id},
-            max_pages=get_n_pages(n_items=n_episodes),
+            max_pages=_get_n_pages(n_items=n_episodes),
         )
 
         self.episodes = [
@@ -114,13 +108,30 @@ class Program:
         self.latest_episode = self.episodes[0]
 
 
+def _get_n_pages(n_items, pagesize=10):
+    """ How many api-pages are needed to get n_items ? """
+    return ((n_items - 1) // pagesize) + 1
+
+
+def _dedupe_programs(programs: List[Program]) -> List[Program]:
+    """ Deduplicate a list of programs """
+
+    programs_unique: List[Program] = list()
+    for program in programs:
+        if not any(
+            [prog for prog in programs_unique if prog.id == program.id]
+        ):
+            programs_unique.append(program)
+    return programs_unique
+
+
 def get_all_programs_from_api() -> List[Program]:
     """ Get news and other programs """
     log.info(f"Getting all programs from API")
     # Get regular programs from paginated API
     programs: List[Program] = [
         Program(raw=raw_program)
-        for page in SrApiIter(endpoint="/programs/index", data_key="programs")
+        for page in _SrApiIter(endpoint="/programs/index", data_key="programs")
         for raw_program in page
     ]
     # Get news programs, they come in a single page
@@ -131,21 +142,9 @@ def get_all_programs_from_api() -> List[Program]:
         ).json()["programs"]
     ]
 
-    all_programs = dedupe_programs(news + programs)
+    all_programs = _dedupe_programs(news + programs)
 
     return all_programs
-
-
-def dedupe_programs(programs: List[Program]) -> List[Program]:
-    """ Deduplicate a list of programs """
-
-    programs_unique: List[Program] = list()
-    for program in programs:
-        if not any(
-            [prog for prog in programs_unique if prog.id == program.id]
-        ):
-            programs_unique.append(program)
-    return programs_unique
 
 
 def query_programs(name, programs: List[Program]) -> List[Program]:

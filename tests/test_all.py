@@ -1,5 +1,7 @@
 """ All tests for hnet app """
 
+# pylint: disable=protected-access
+
 from hnet import sr
 
 
@@ -42,16 +44,16 @@ def test_dedup_programs() -> None:
     prog_1_dup = sr.Program({"id": 1, "name": "fake program"})
     prog_2 = sr.Program({"id": 2, "name": "fake program"})
     progs_w_duplicates = [prog_1, prog_1_dup, prog_2]
-    progs_deduped = sr.dedupe_programs(progs_w_duplicates)
+    progs_deduped = sr._dedupe_programs(progs_w_duplicates)
     assert len(progs_deduped) == 2
 
 
 def test_get_n_pages():
     """ Test that the page math is correct """
 
-    assert sr.get_n_pages(n_items=1, pagesize=10) == 1
-    assert sr.get_n_pages(n_items=10, pagesize=10) == 1
-    assert sr.get_n_pages(n_items=11, pagesize=10) == 2
-    assert sr.get_n_pages(n_items=20, pagesize=10) == 2
-    assert sr.get_n_pages(n_items=21, pagesize=10) == 3
-    assert sr.get_n_pages(n_items=4, pagesize=2) == 2
+    assert sr._get_n_pages(n_items=1, pagesize=10) == 1
+    assert sr._get_n_pages(n_items=10, pagesize=10) == 1
+    assert sr._get_n_pages(n_items=11, pagesize=10) == 2
+    assert sr._get_n_pages(n_items=20, pagesize=10) == 2
+    assert sr._get_n_pages(n_items=21, pagesize=10) == 3
+    assert sr._get_n_pages(n_items=4, pagesize=2) == 2
