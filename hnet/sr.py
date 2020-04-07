@@ -10,6 +10,7 @@ import warnings
 import requests
 
 # Hook into the parent applications logger.
+# Not cool as it's not portable but it works for now.
 log = logging.getLogger("hnet.app")
 
 URL_BASE = "https://api.sr.se/api/v2"
@@ -18,15 +19,34 @@ URL_BASE = "https://api.sr.se/api/v2"
 class _SrApiIter:
     """ Iterator for paginated SR API """
 
-    def __init__(self, endpoint, data_key, max_pages=None, params=None):
+    default_pagesize = 100
+
+    def __init__(self, endpoint, data_key, n_items=None, params=None):
 
         self.url = f"{URL_BASE}/{endpoint}"
         self.data_key = data_key
 
+        # If n_items passed, set self.n_items
+        self.n_items: Optional[int] = n_items if n_items else None
+
+        self.pagesize: int
+        if self.n_items and self.n_items <= _SrApiIter.default_pagesize:
+            self.pagesize = self.n_items
+        else:
+            self.pagesize = _SrApiIter.default_pagesize
+
+        # If self.n_items is set, set self.max_pages
+        self.max_pages: Optional[int] = _get_n_pages(
+            self.n_items, pagesize=self.pagesize
+        ) if self.n_items else None
+
         # Default params
-        self.params = {"format": "json", "pagination": True, "size": 10}
+        self.params = {
+            "format": "json",
+            "pagination": True,
+            "size": self.pagesize,
+        }
         self.page = 1
-        self.max_pages = max_pages
 
         # If user supplied extra params, insert them now
         if params:
@@ -100,7 +120,7 @@ class Program:
             endpoint="/episodes/index",
             data_key="episodes",
             params={"programid": self.id},
-            max_pages=_get_n_pages(n_items=n_episodes),
+            n_items=n_episodes,
         )
 
         self.episodes = [
@@ -109,7 +129,7 @@ class Program:
         self.latest_episode = self.episodes[0]
 
 
-def _get_n_pages(n_items, pagesize=10):
+def _get_n_pages(n_items: int, pagesize: int) -> int:
     """ How many api-pages are needed to get n_items ? """
     return ((n_items - 1) // pagesize) + 1
 
