@@ -83,7 +83,7 @@ class Episode:
         self.id: int = int(raw["id"])  # pylint: disable=invalid-name
         self.title: str = raw["title"]
         self.description: str = raw["description"]
-        self.program: Program = Program(raw["program"])
+        self.program_name = raw["program"]["name"]
         log.debug(f"Initalised {self}")
 
         if "downloadpodfile" in raw.keys():
@@ -97,7 +97,7 @@ class Episode:
             warnings.warn(f"Couldn't find an URL to audio file")
 
     def __str__(self):
-        return f"Episode: id: {self.id} for program {self.program}"
+        return f"Episode: id: {self.id} name: {self.title} for program {self.program_name}"
 
 
 class Program:

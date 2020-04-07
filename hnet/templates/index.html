@@ -23,7 +23,7 @@
       <!-- show them as an unordered list -->
       {% for program in programs %}
         <li>
-          {{ program.name }}:
+          {{ program.name }}: {{program.latest_episode.title}}
           <br>
           <audio controls>
           <source src={{ program.latest_episode.url_audio }}>
