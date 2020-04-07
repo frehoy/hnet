@@ -9,7 +9,8 @@ import logging
 import warnings
 import requests
 
-log = logging.getLogger(__name__)
+# Hook into the parent applications logger.
+log = logging.getLogger("hnet.app")
 
 URL_BASE = "https://api.sr.se/api/v2"
 
@@ -43,7 +44,6 @@ class _SrApiIter:
             raise StopIteration
 
         self.params["page"] = self.page
-        # Something goes bad with utf-8 encoding here, .text is fine, .json not
         response = requests.get(url=self.url, params=self.params).json()
         data = response[self.data_key]
 
@@ -64,7 +64,7 @@ class Episode:
         self.title: str = raw["title"]
         self.description: str = raw["description"]
         self.program: Program = Program(raw["program"])
-        self.raw = raw
+        log.debug(f"Initalised {self}")
 
         if "downloadpodfile" in raw.keys():
             self.url_audio = raw["downloadpodfile"]["url"]
@@ -88,6 +88,7 @@ class Program:
         self.name = raw["name"]
         self.episodes: List[Episode] = []
         self.latest_episode: Optional[Episode] = None
+        log.debug(f"Initalised {self}")
 
     def __str__(self):
         return f"Program: name: {self.name} id: {self.id}"
@@ -122,12 +123,15 @@ def _dedupe_programs(programs: List[Program]) -> List[Program]:
             [prog for prog in programs_unique if prog.id == program.id]
         ):
             programs_unique.append(program)
+
+    n_removed = len(programs) - len(programs_unique)
+    log.debug(f"Dedup removed {n_removed} duplicate programs")
     return programs_unique
 
 
 def get_all_programs_from_api() -> List[Program]:
     """ Get news and other programs """
-    log.info(f"Getting all programs from API")
+    log.info(f"Fetching all programs from API")
     # Get regular programs from paginated API
     programs: List[Program] = [
         Program(raw=raw_program)
@@ -143,6 +147,7 @@ def get_all_programs_from_api() -> List[Program]:
     ]
 
     all_programs = _dedupe_programs(news + programs)
+    log.info(f"Fininshed fetching all programs from API")
 
     return all_programs
 

@@ -9,7 +9,9 @@ from . import sr
 
 app = flask.Flask(__name__)
 
+app.logger.info(f"Starting.")
 PROGRAMS = sr.get_all_programs_from_api()
+app.logger.info(f"Ready.")
 
 
 @app.route("/")
@@ -29,7 +31,6 @@ def present_results(query):
     """ Present the results from a query """
     app.logger.info(f"Presenting results for {query}")
     programs = sr.query_programs(name=escape(query), programs=PROGRAMS)
-    app.logger.info(f"Found {len(programs)} programs matching {query}")
     for program in programs:
         program.refresh_episodes()
 
