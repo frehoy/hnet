@@ -57,3 +57,8 @@ def test_get_n_pages():
     assert sr._get_n_pages(n_items=20, pagesize=10) == 2
     assert sr._get_n_pages(n_items=21, pagesize=10) == 3
     assert sr._get_n_pages(n_items=4, pagesize=2) == 2
+
+
+def test_get_all_programs():
+    """ Test getting all programs to check SR's APi working """
+    _ = sr.get_all_programs_from_api()

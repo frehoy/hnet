@@ -13,7 +13,7 @@ import requests
 # Not cool as it's not portable but it works for now.
 log = logging.getLogger("hnet.app")
 
-URL_BASE = "https://api.sr.se/api/v2"
+URL_BASE = "http://api.sr.se/api/v2"
 
 
 class _SrApiIter:
@@ -64,8 +64,10 @@ class _SrApiIter:
             raise StopIteration
 
         self.params["page"] = self.page
-        response = requests.get(url=self.url, params=self.params).json()
-        data = response[self.data_key]
+        response = requests.get(url=self.url, params=self.params)
+        log.debug(response.url)
+        response_json = response.json()
+        data = response_json[self.data_key]
 
         if data:
             self.page += 1
@@ -97,7 +99,10 @@ class Episode:
             warnings.warn(f"Couldn't find an URL to audio file")
 
     def __str__(self):
-        return f"Episode: id: {self.id} name: {self.title} for program {self.program_name}"
+        return (
+            f"Episode: id: {self.id} name: {self.title} "
+            f"program {self.program_name}"
+        )
 
 
 class Program:
@@ -153,12 +158,14 @@ def get_all_programs_from_api() -> List[Program]:
     """ Get news and other programs """
     log.info(f"Fetching all programs from API")
     # Get regular programs from paginated API
+    log.debug(f"Fetching programs")
     programs: List[Program] = [
         Program(raw=raw_program)
         for page in _SrApiIter(endpoint="/programs/index", data_key="programs")
         for raw_program in page
     ]
     # Get news programs, they come in a single page
+    log.debug(f"Fetching news programs")
     news: List[Program] = [
         Program(raw=raw_program)
         for raw_program in requests.get(
